@@ -7,38 +7,41 @@ exports.getAllDiffusions = (req, res, next) => {
 };
 
 exports.getAllDiffusionsFiltre = (req, res, next) => {
-    Diffusion.find()
-    .populate('animationId', 'titre image annee_premiere_diffusion studio pays genre format synopsis lien') // Champs de l'animation
-    .populate('chaineId', 'nom') // Champs de la chaîne
-    .then(diffusions => {
-        const result = diffusions.reduce((acc, diffusion) => {
-            const animationId = diffusion.animationId._id;
-            if (!acc[animationId]) {
-                acc[animationId] = {
-                    ...diffusion.animationId._doc,
-                    chaines: [],
-                    pays: diffusion.animationId.pays || [],
-                    genre: diffusion.animationId.genre || [],
-                    lien: diffusion.animationId.lien || [],
-                };
-            }
-            // acc[animationId].chaines.push(diffusion.chaineId._id);
-            acc[animationId].chaines.push(diffusion.chaineId.nom);
-            return acc;
-        }, {});
+  Diffusion.find()
+  .populate('animationId', 'titre image annee_premiere_diffusion studio pays genre format synopsis lien') // Champs de l'animation
+  .populate('chaineId', 'nom') // Champs de la chaîne
+  .then(diffusions => {
+      const result = diffusions.reduce((acc, diffusion) => {
+          const animationId = diffusion.animationId._id;
+          if (!acc[animationId]) {
+              acc[animationId] = {
+                  ...diffusion.animationId._doc,
+                  chaines: [],
+                  pays: diffusion.animationId.pays || [],
+                  genre: diffusion.animationId.genre || [],
+                  lien: diffusion.animationId.lien || [],
+              };
+          }
+          acc[animationId].chaines.push(diffusion.chaineId.nom);
+          return acc;
+      }, {});
 
-        const finalResult = Object.values(result).map(animation => ({
-            ...animation,
-            chaines: [...new Set(animation.chaines)], // Suppression des doublons
-        }));
+      const finalResult = Object.values(result).map(animation => ({
+          ...animation,
+          chaines: [...new Set(animation.chaines)], // Suppression des doublons
+      }));
 
-        res.status(200).json({ diffusions: finalResult });
-    })
-    .catch(error => {
-        console.error('CTRLErreur lors de la récupération des diffusions filtrées:', error);
-        res.status(400).json({ error });
-    });
-  };
+      // Tri alphabétique par le champ 'titre' de l'animation
+      finalResult.sort((a, b) => a.titre.localeCompare(b.titre));
+
+      res.status(200).json({ diffusions: finalResult });
+  })
+  .catch(error => {
+      console.error('Erreur lors de la récupération des diffusions filtrées:', error);
+      res.status(400).json({ error });
+  });
+};
+
 
 exports.createDiffusion = (req, res, next) => {
   const diffusion = new Diffusion({
