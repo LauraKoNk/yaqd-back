@@ -2,7 +2,12 @@ const Diffusion = require('../models/Diffusions');
 
 exports.getAllDiffusions = (req, res, next) => {
   Diffusion.find()
-    .then((diffusions) => res.status(200).json(diffusions))
+    .populate('animationId', 'titre')  // Récupère uniquement le champ 'titre' de l'animation
+    .populate('chaineId', 'nom')       // Récupère uniquement le champ 'nom' de la chaîne
+    .then((diffusions) => {
+      diffusions.sort((a, b) => a.animationId.titre.localeCompare(b.animationId.titre));
+      res.status(200).json(diffusions);
+    })
     .catch((error) => res.status(400).json({ error }));
 };
 
